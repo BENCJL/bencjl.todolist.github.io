@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        body {
+            background-color: #cdcdcd;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0 8px;
+            box-sizing: border-box;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            height: 50px;
+            font-size: 24px;
+            line-height: 50px;
+            color: #cdcdcd;
+            background-color: #323232;
+        }
+
+        .header input {
+            float: right;
+            width: 60%;
+            max-width: 350px;
+            height: 26px;
+            margin: 12px 0;
+            padding-left: 8px;
+            padding-right: 8px;
+            box-sizing: border-box;
+            border: none;
+            border-radius: 5px;
+            outline: none;
+            box-shadow: 0 0 4px 1px #888 inset;
+        }
+
+        .doing {
+            margin-top: 74px;
+        }
+
+        .list .hd {
+            height: 24px;
+            margin: 24px 0;
+            line-height: 24px;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .list .hd .count {
+            float: right;
+            margin: 2px 0;
+            padding: 0 5px;
+            font-size: 14px;
+            line-height: 20px;
+            font-weight: 700;
+            border-radius: 11px;
+            color: #666;
+            background-color: #E6E6FA;
+        }
+
+        .list .bd ul {
+            list-style: none;
+        }
+
+        .list .bd ul li {
+            height: 32px;
+            margin-bottom: 10px;
+            padding-left: 15px;
+            padding-right: 5px;
+            line-height: 32px;
+            border-left: 5px solid #629A9C;
+            border-radius: 5px;
+            background-color: #fff;
+
+        }
+
+        .list.done .bd ul li {
+            opacity: 0.5;
+        }
+
+        .list .bd ul li input {
+            width: 22px;
+            height: 22px;
+            margin-top: 5px;
+            margin-right: 4px;
+            vertical-align: top;
+            cursor: pointer;
+        }
+
+        .list .bd ul li .remove {
+            float: right;
+            width: 14px;
+            height: 14px;
+            margin-top: 2px;
+            border-radius: 50%;
+            border: 6px double #fff;
+            color: #fff;
+            background-color: #ccc;
+            text-align: center;
+            line-height: 14px;
+            cursor: pointer;
+        }
+
+        .footer {
+            margin: 20px 0;
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .footer a {
+            color: #999;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="container">
+            <span>ToDoList</span>
+            <input type="text" name="" id="" placeholder="添加ToDo">
+        </div>
+    </header>
+    <div class="container list doing">
+        <div class="hd">
+            <span>正在进行</span>
+            <span class="count"></span>
+        </div>
+        <div class="bd">
+            <ul>
+            </ul>
+        </div>
+    </div>
+    <div class="container list done">
+        <div class="hd">
+            <span>已经完成</span>
+            <span class="count"></span>
+        </div>
+        <div class="bd">
+            <ul>
+            </ul>
+        </div>
+    </div>
+    <footer class="footer">Copyright &copy; 2014 todolist.cn <a href="javascript:;" class="clear">clear</a></footer>
+
+    <script src="https://cdn.staticfile.org/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        $(function () {
+            // 0 初始化
+            var tasks = [];
+
+            function addTask(task) {
+                tasks.push(task);
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+                return tasks.length - 1;
+            }
+
+            function modifyTask(index, done) {
+                tasks[index].done = done;
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+            }
+
+            function removeTask(index, isRemoveAll) {
+                if (isRemoveAll) {
+                    tasks = [];
+                } else {
+                    tasks.splice(index, 1);
+                }
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+            }
+
+            function getTasksFromStorage() {
+                var temp = localStorage.getItem('tasks');
+                if (temp) {
+                    tasks = JSON.parse(temp);
+                }
+
+                $.each(tasks, function (index) {
+                    var li = $('<li data-index="' + index + '"><input type="checkbox"><span class="task">' + this.title + '</span><span class="remove">-</span></li>');
+                    if (this.done) {
+                        $('.done ul').append(li);
+                    } else {
+                        $('.doing ul').append(li);
+                    }
+                });
+                $('.done :checkbox').prop('checked', true);
+                updateListCount();
+            }
+            getTasksFromStorage();
+
+            function updateListCount() {
+                $('.doing .count').html($('.doing ul li').length);
+                $('.done .count').html($('.done ul li').length);
+            }
+            updateListCount();
+
+            // 1 输入，并回车键增加list task
+            $('.header input').on('keyup', function (e) {
+                if (e.keyCode == 13 && $(this).val() != '') {
+                    // 1-1 更新tasks队列（并存储到localstorage)
+                    var newIndex = addTask({ title: $(this).val(), done: false});
+
+                    // 修改页面
+                    var li = $('<li data-index="' + newIndex + '"><input type="checkbox"><span class="task">' + $(this).val() + '</span><span class="remove">-</span></li>');
+                    $('.doing ul').prepend(li);
+                    updateListCount();
+                    $(this).val("");
+                }
+            });
+
+            // 2 checkbox的变换，勾选则放入done，未勾选放入doing
+            // 2-1 需要改成动态元素写法
+            $('.list').on('click', ':checkbox', function () {
+                // 2-2 需要修改tasks数组（并存储到localstorage）
+                // jquery的data()有bug，无法修改页面显示的data-index，改用原生JS的dataset
+                modifyTask($(this).parent()[0].dataset['index'], $(this).prop('checked'));
+
+                // prepend会自带移动元素的效果，不需增加新元素、删除旧元素
+                if ($(this).prop('checked')) {
+                    $('.done ul').prepend($(this).parent());
+                } else {
+                    $('.doing ul').prepend($(this).parent());
+                }
+                updateListCount();
+            });
+
+            // 3 删除按钮
+            $('.list').on('click', '.remove', function () {
+                // 修改tasks数组（并存储到localstorage）
+                removeTask({title: $(this).siblings('.task').html(), done: $(this).siblings(':checkbox').prop('checked')});
+                // 修改页面，凡是data-index大于待移除的li，它的data-index需要减1，确保对齐tasks数组
+                var removeIndex = $(this).parent()[0].dataset['index'];
+                $('.list ul li').each(function(index, domElm){
+                    var temp = parseInt(domElm.dataset['index']);
+                    if (temp > removeIndex) {
+                        domElm.dataset['index'] = temp - 1;
+                    }
+                });
+                $(this).parent().remove();
+                updateListCount();
+            });
+
+            // 4 清空按钮
+            $('.clear').on('click', function () {
+                // 修改tasks数组（并存储到localstorage）
+                removeTask({}, true);
+
+                // 修改页面
+                $('.list ul').empty();
+                updateListCount();
+            });
+        });
+    </script>
+</body>
+
+</html>
